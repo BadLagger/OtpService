@@ -1,13 +1,21 @@
 package sf.mifi.grechko.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.entity.User;
 import sf.mifi.grechko.service.OtpService;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class OtpController {
@@ -29,14 +37,37 @@ public class OtpController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@Valid @ModelAttribute UserDto request) {
+    public ResponseEntity<User> registerUser(@Valid @ModelAttribute UserDto request) throws MethodArgumentNotValidException {
         System.out.println("Get in register");
+        System.out.format("Login: %s\n", request.login());
+        System.out.format("Password: %s\n", request.passwd());
+        System.out.format("email: %s\n", request.email());
+        System.out.format("role: %s\n", request.role());
+        System.out.format("telega: %s\n", request.telegram());
+        System.out.format("phone: %s\n", request.phone());
+
         throw new IllegalArgumentException("Bad User");
     }
 
     // Обработчик ошибок
     @ExceptionHandler(IllegalArgumentException.class)
-    protected ResponseEntity<Object> handleIllegalArguments(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(ex.getMessage());
+    protected String handleIllegalArguments(IllegalArgumentException ex, Model model) {
+        List<String> errors = new ArrayList<>();
+        errors.add(ex.getMessage());
+        model.addAttribute("errors", errors);
+        return "validation-error";
+    }
+
+    // Обработчик ошибок
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected String handleValidationErrors(MethodArgumentNotValidException ex, Model model) {
+        BindingResult result = ex.getBindingResult();
+        List<FieldError> fieldErrors = result.getFieldErrors();
+        List<String> errors = fieldErrors.stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.toList());
+
+        model.addAttribute("errors", errors); // Передаем ошибки в модель
+        return "validation-error";
     }
 }
