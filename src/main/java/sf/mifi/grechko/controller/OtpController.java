@@ -33,4 +33,10 @@ public class OtpController {
         System.out.println("Get in register");
         throw new IllegalArgumentException("Bad User");
     }
+
+    // Обработчик ошибок
+    @ExceptionHandler(IllegalArgumentException.class)
+    protected ResponseEntity<Object> handleIllegalArguments(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
 }
