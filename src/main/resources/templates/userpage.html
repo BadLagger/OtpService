@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Страница пользователя, ' + ${username}"></title>
+    <style>
+        /* Простой CSS-стиль для кнопок */
+        button {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Добро пожаловать, <span th:text="${username}"></span>!</h1>
+
+<button onclick="checkPhone()">Проверка номера телефона</button>
+<button onclick="checkTelegram()">Проверка Telegram</button>
+<button onclick="checkEmail()">Проверка Email</button>
+<button onclick="logOut()">Выход</button>
+
+<script>
+    // Пример функций обработки нажатия кнопок
+    function checkPhone() {
+        alert("Кнопка \"Проверка номера телефона\" нажата!");
+    }
+
+    function checkTelegram() {
+        alert("Кнопка \"Проверка Telegram\" нажата!");
+    }
+
+    function checkEmail() {
+        alert("Кнопка \"Проверка Email\" нажата!");
+    }
+
+    function logOut() {
+        alert("Кнопка \"Выход\" нажата!");
+    }
+</script>
+
+</body>
+</html>

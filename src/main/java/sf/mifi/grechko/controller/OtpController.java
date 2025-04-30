@@ -38,13 +38,13 @@ public class OtpController {
 
     @PostMapping("/register")
     public String registerUser(@Valid @ModelAttribute UserDto request, Model model) throws MethodArgumentNotValidException {
-        System.out.println("Get in register");
+        /*System.out.println("Get in register");
         System.out.format("Login: %s\n", request.login());
         System.out.format("Password: %s\n", request.passwd());
         System.out.format("email: %s\n", request.email());
         System.out.format("role: %s\n", request.role());
         System.out.format("telega: %s\n", request.telegram());
-        System.out.format("phone: %s\n", request.phone());
+        System.out.format("phone: %s\n", request.phone());*/
 
         service.registerNewUser(request);
         model.addAttribute("message", "Registration OK!");
