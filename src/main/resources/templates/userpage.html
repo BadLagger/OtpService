@@ -21,7 +21,12 @@
 <button onclick="checkPhone()">Проверка номера телефона</button>
 <button onclick="checkTelegram()">Проверка Telegram</button>
 <button onclick="checkEmail()">Проверка Email</button>
-<button onclick="logOut()">Выход</button>
+<!-- Кнопка выхода -->
+<!-- Форма для выхода -->
+<form th:action="@{/logout}" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <button type="submit">Выход</button>
+</form>
 
 <script>
     // Пример функций обработки нажатия кнопок
@@ -35,10 +40,6 @@
 
     function checkEmail() {
         alert("Кнопка \"Проверка Email\" нажата!");
-    }
-
-    function logOut() {
-        alert("Кнопка \"Выход\" нажата!");
     }
 </script>
 

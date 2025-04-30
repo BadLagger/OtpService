@@ -18,8 +18,12 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/login-check").permitAll()          // делаем страницу входа открытой
                         .requestMatchers("/register-form", "/register").permitAll() // открытая регистрация
                         .anyRequest().authenticated())                  // все остальное требует авторизации
-                .formLogin(form -> form.loginPage("/login"))
-                .logout(logout -> logout.permitAll());
+                .logout( logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID"));
         return http.build();
     }
 
