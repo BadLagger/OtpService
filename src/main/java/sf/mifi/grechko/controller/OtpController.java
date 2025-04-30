@@ -37,7 +37,7 @@ public class OtpController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@Valid @ModelAttribute UserDto request) throws MethodArgumentNotValidException {
+    public String registerUser(@Valid @ModelAttribute UserDto request, Model model) throws MethodArgumentNotValidException {
         System.out.println("Get in register");
         System.out.format("Login: %s\n", request.login());
         System.out.format("Password: %s\n", request.passwd());
@@ -46,7 +46,9 @@ public class OtpController {
         System.out.format("telega: %s\n", request.telegram());
         System.out.format("phone: %s\n", request.phone());
 
-        throw new IllegalArgumentException("Bad User");
+        service.registerNewUser(request);
+        model.addAttribute("message", "Registration OK!");
+        return "success";
     }
 
     // Обработчик ошибок
