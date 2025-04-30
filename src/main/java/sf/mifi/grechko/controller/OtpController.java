@@ -3,12 +3,14 @@ package sf.mifi.grechko.controller;
 import jakarta.validation.Valid;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.entity.User;
 import sf.mifi.grechko.service.OtpService;
@@ -29,6 +31,27 @@ public class OtpController {
     @GetMapping("/login")
     public String showLoginForm() {
         return "login"; // Имя шаблона (без расширения .html)
+    }
+
+    @PostMapping("login-check")
+    public String processLogin(@RequestParam String username, @RequestParam String passwd, Model model) {
+        System.out.println("ProcessLogin");
+        try {
+            // Попытайтесь аутентифицировать пользователя
+            service.authenticate(username, passwd);
+            System.out.println("LoginOK!");
+            model.addAttribute("username", username);
+            // Аутентификация прошла успешно, перенаправляем на домашнюю страницу
+            return "userpage";
+        } catch (AuthenticationException e) {
+            List<String> errors = new ArrayList<>();
+            errors.add(e.getMessage());
+            // Аутентификация провалилась, передаем ошибку в шаблон
+            System.out.println("LoginERR!");
+            //redirectAttrs.addFlashAttribute("error", "Invalid credentials or account locked.");
+            model.addAttribute("errors", errors);
+            return "validation-error";
+        }
     }
 
     @GetMapping("/register-form")

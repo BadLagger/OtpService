@@ -2,6 +2,8 @@ package sf.mifi.grechko.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.dto.UserRole;
@@ -40,6 +42,16 @@ public class OtpService {
             userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    public void authenticate(String username, String password) {
+        User user = userRepository.findByLogin(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found");
+        }
+        if (!passwordService.matchesPassword(password, user.getPasswd())) {
+            throw new BadCredentialsException("Invalid password");
         }
     }
 }
