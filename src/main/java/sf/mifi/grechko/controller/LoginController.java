@@ -1,25 +1,17 @@
 package sf.mifi.grechko.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.dto.UserRole;
-import sf.mifi.grechko.entity.User;
+import sf.mifi.grechko.service.JwtService;
 import sf.mifi.grechko.service.OtpService;
 import sf.mifi.grechko.service.UserService;
 
@@ -28,14 +20,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
-public class OtpController {
+public class LoginController {
 
     public final OtpService otpService;
     public final UserService userService;
+    public final JwtService jwtService;
 
-    public OtpController(OtpService otpService, UserService userService) {
+    public LoginController(OtpService otpService, UserService userService, JwtService jwtService) {
         this.otpService = otpService;
         this.userService = userService;
+        this.jwtService = jwtService;
     }
 
     @GetMapping("/login")
@@ -50,8 +44,13 @@ public class OtpController {
             // Попытайтесь аутентифицировать пользователя
             UserRole role = userService.authenticate(username, passwd);
 
+            // Генерируем JWT-токен
+            String jwtToken = jwtService.generateToken(username);
+
             model.addAttribute("username", username);
             model.addAttribute("role", role.toString());
+            model.addAttribute("jwtToken", jwtToken);
+
             // Аутентификация прошла успешно, перенаправляем на домашнюю страницу
             return "userpage";
         } catch (AuthenticationException e) {

@@ -19,6 +19,8 @@
 
 <h1>Добро пожаловать, <span th:text="${username}"></span>!</h1>
 
+<p>Ваш JWT-токен: <span th:text="${jwtToken}"></span></p>
+
 <button onclick="checkPhone()">Проверка номера телефона</button>
 <button onclick="checkTelegram()">Проверка Telegram</button>
 <button onclick="checkEmail()">Проверка Email</button>
