@@ -1,9 +1,15 @@
 package sf.mifi.grechko.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -12,8 +18,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sf.mifi.grechko.dto.UserDto;
+import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.entity.User;
 import sf.mifi.grechko.service.OtpService;
+import sf.mifi.grechko.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +30,12 @@ import java.util.stream.Collectors;
 @Controller
 public class OtpController {
 
-    public final OtpService service;
+    public final OtpService otpService;
+    public final UserService userService;
 
-    public OtpController(OtpService service) {
-        this.service = service;
+    public OtpController(OtpService otpService, UserService userService) {
+        this.otpService = otpService;
+        this.userService = userService;
     }
 
     @GetMapping("/login")
@@ -38,9 +48,10 @@ public class OtpController {
         System.out.println("ProcessLogin");
         try {
             // Попытайтесь аутентифицировать пользователя
-            service.authenticate(username, passwd);
-            System.out.println("LoginOK!");
+            UserRole role = userService.authenticate(username, passwd);
+
             model.addAttribute("username", username);
+            model.addAttribute("role", role.toString());
             // Аутентификация прошла успешно, перенаправляем на домашнюю страницу
             return "userpage";
         } catch (AuthenticationException e) {
@@ -61,15 +72,8 @@ public class OtpController {
 
     @PostMapping("/register")
     public String registerUser(@Valid @ModelAttribute UserDto request, Model model) throws MethodArgumentNotValidException {
-        /*System.out.println("Get in register");
-        System.out.format("Login: %s\n", request.login());
-        System.out.format("Password: %s\n", request.passwd());
-        System.out.format("email: %s\n", request.email());
-        System.out.format("role: %s\n", request.role());
-        System.out.format("telega: %s\n", request.telegram());
-        System.out.format("phone: %s\n", request.phone());*/
 
-        service.registerNewUser(request);
+        userService.registerNewUser(request);
         model.addAttribute("message", "Registration OK!");
         return "success";
     }
