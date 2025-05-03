@@ -2,11 +2,13 @@ package sf.mifi.grechko.service;
 
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.text.ParseException;
 import java.util.Date;
 
 @Service
@@ -50,12 +52,31 @@ public class JwtService {
         return signedJWT.serialize();
     }
 
-    /*public Claims parseToken(String token) {
-        return Jwts.parser()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }*/
+    public void parseToken(String token) throws ParseException, JOSEException {
+        // Проверяем токен на валидность
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        // Проверяем подпись токена
+        JWSVerifier verifier = new MACVerifier(secretKeyBytes);
+        if (!signedJWT.verify(verifier)) {
+            throw new JOSEException("Invalid signature");
+        }
+
+        // Проверяем претензии (claims)
+        JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+
+        // Проверяем срок действия токена
+        if (claimsSet.getExpirationTime().before(new Date())) {
+            throw new JOSEException("Expired token");
+        }
+
+        // Проверяем субъекта (username)
+        String subject = claimsSet.getSubject();
+        if (subject == null || subject.isEmpty()) {
+            throw new JOSEException("Missing subject claim");
+        }
+
+        // Токен успешно проверен
+    }
 
 }
