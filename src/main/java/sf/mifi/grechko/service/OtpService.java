@@ -1,5 +1,6 @@
 package sf.mifi.grechko.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,9 +13,9 @@ import sf.mifi.grechko.mapper.UserMapper;
 import sf.mifi.grechko.repository.UserRepository;
 
 @Service
+@RequiredArgsConstructor
 public class OtpService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
 }

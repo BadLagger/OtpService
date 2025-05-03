@@ -5,6 +5,7 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -12,13 +13,10 @@ import java.text.ParseException;
 import java.util.Date;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
     private final byte[] secretKeyBytes;
-
-    public JwtService(byte[] key) {
-        secretKeyBytes = key;
-    }
 
     public String generateToken(String username) {
         Date issuedAt = new Date(System.currentTimeMillis());

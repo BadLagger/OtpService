@@ -1,6 +1,7 @@
 package sf.mifi.grechko.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Controller;
@@ -20,17 +21,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
+@RequiredArgsConstructor
 public class LoginController {
 
     public final OtpService otpService;
     public final UserService userService;
     public final JwtService jwtService;
-
-    public LoginController(OtpService otpService, UserService userService, JwtService jwtService) {
-        this.otpService = otpService;
-        this.userService = userService;
-        this.jwtService = jwtService;
-    }
 
     @GetMapping("/login")
     public String showLoginForm() {
