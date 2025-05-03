@@ -1,5 +1,6 @@
 package sf.mifi.grechko.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,18 +20,13 @@ import java.util.Collection;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserService{
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordService passwordService;
+    private final PasswordService passwordService;
 
     private final UserMapper userMapper;
-
-    public UserService(UserMapper mapper) {
-        userMapper = mapper;
-    }
 
     public void registerNewUser(UserDto userDto) {
         User user = userMapper.toEntity(userDto);
