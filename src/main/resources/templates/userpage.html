@@ -17,13 +17,13 @@
 </head>
 <body>
 
-<h1>Добро пожаловать, <span th:text="${username}"></span>!</h1>
+<h1>Добро пожаловать, <span th:text="${username}" id="user-name"></span>!</h1>
 
-<p>Ваш JWT-токен: <span th:text="${jwtToken}"></span></p>
+<p>Ваш JWT-токен: <span th:text="${jwtToken}" id="jwt-token"></span></p>
 
-<button onclick="checkPhone()">Проверка номера телефона</button>
-<button onclick="checkTelegram()">Проверка Telegram</button>
-<button onclick="checkEmail()">Проверка Email</button>
+<button onclick="otpRequest(this)" id="phone">Проверка номера телефона</button>
+<button onclick="otpRequest(this)" id="telegram">Проверка Telegram</button>
+<button onclick="otpRequest(this)" id="email">Проверка Email</button>
 
 <!-- Специальные кнопки только для администраторов -->
 <div th:if="${role == 'ADMIN'}">
@@ -38,6 +38,44 @@
 </form>
 
 <script>
+
+    function otpRequest(btnType) {
+        const xhr = new XMLHttpRequest();
+        const userName = document.getElementById("user-name").innerText;
+        const jwtToken = document.getElementById("jwt-token").innerText;
+
+        console.log("OtpRequest begin");
+        console.log("User Name: ", userName);
+        console.log("Jwt Token: ", jwtToken);
+        console.log("Btn Type: ", btnType.id);
+
+        xhr.open('POST', '/otp-request', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Autorization', 'Bearer ${jwtToken}');
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log("Ok-Content: ", xhr.responseText);
+                } else {
+                    console.log("Err: ", xhr.status);
+                    console.log("content: ", xhr.responseText);
+                }
+            } else {
+                console.log("Some differ state: ", xhr.readyState);
+            }
+        }
+
+        const data = JSON.stringify(
+            {
+                login: userName,
+                type: btnType.id
+            }
+        );
+
+        xhr.send(data)
+    }
+
     // Пример функций обработки нажатия кнопок
     function checkPhone() {
         alert("Кнопка \"Проверка номера телефона\" нажата!");
