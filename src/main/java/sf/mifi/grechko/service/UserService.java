@@ -59,4 +59,8 @@ public class UserService{
         }
         return user.getRole();
     }
+
+    public UserRole getRoleByUsername(String username) {
+        return userRepository.findRoleByLogin(username);
+    }
 }

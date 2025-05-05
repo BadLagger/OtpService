@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.repository.UserRepository;
 import sf.mifi.grechko.service.JwtService;
+import sf.mifi.grechko.service.UserService;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -23,7 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,8 +35,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             token = token.substring(7);
             try {
                 String username = jwtService.parseToken(token);
-                UserRole role = userRepository.findRoleByLogin(username);
-                
+                UserRole role = userService.getRoleByUsername(username);
+
                 if (role == null) {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Wrong Role Id");
                     return;
