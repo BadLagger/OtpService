@@ -24,7 +24,7 @@ public class JwtService {
 
         // Создаем набор претензий (claims)
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .issuer("your_app_name")
+                .issuer("lottery")
                 .subject(username)
                 .issueTime(issuedAt)
                 .expirationTime(expiredAt)
@@ -50,7 +50,7 @@ public class JwtService {
         return signedJWT.serialize();
     }
 
-    public void parseToken(String token) throws ParseException, JOSEException {
+    public String parseToken(String token) throws ParseException, JOSEException {
         // Проверяем токен на валидность
         SignedJWT signedJWT = SignedJWT.parse(token);
 
@@ -73,8 +73,8 @@ public class JwtService {
         if (subject == null || subject.isEmpty()) {
             throw new JOSEException("Missing subject claim");
         }
-
         // Токен успешно проверен
+        return subject;
     }
 
 }
