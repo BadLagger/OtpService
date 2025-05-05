@@ -33,7 +33,7 @@
 
 <!-- Форма для выхода -->
 <form th:action="@{/logout}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+   <!-- <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/> -->
     <button type="submit">Выход</button>
 </form>
 
@@ -51,12 +51,17 @@
 
         xhr.open('POST', '/otp-request', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Autorization', 'Bearer ${jwtToken}');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + jwtToken);
 
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
+                console.log("Status: ", xhr.status);
+                console.log("Location: ", xhr.getResponseHeader("Location"));
                 if (xhr.status === 200) {
                     console.log("Ok-Content: ", xhr.responseText);
+                    document.open();
+                    document.write(xhr.responseText);
+                    document.close();
                 } else {
                     console.log("Err: ", xhr.status);
                     console.log("content: ", xhr.responseText);

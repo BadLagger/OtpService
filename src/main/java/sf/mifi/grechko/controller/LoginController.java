@@ -33,7 +33,7 @@ public class LoginController {
         return "login"; // Имя шаблона (без расширения .html)
     }
 
-    @PostMapping("login-check")
+    @PostMapping("/login-check")
     public String processLogin(@RequestParam String username, @RequestParam String passwd, Model model) {
         System.out.println("ProcessLogin");
         try {
