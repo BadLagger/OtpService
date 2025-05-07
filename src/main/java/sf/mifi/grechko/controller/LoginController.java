@@ -2,7 +2,11 @@ package sf.mifi.grechko.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,66 +14,87 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import sf.mifi.grechko.dto.UserDto;
-import sf.mifi.grechko.dto.UserRole;
+import sf.mifi.grechko.dto.*;
+import sf.mifi.grechko.entity.User;
 import sf.mifi.grechko.service.JwtService;
 import sf.mifi.grechko.service.OtpService;
 import sf.mifi.grechko.service.UserService;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.AccessDeniedException;
+import java.time.Instant;
+import java.util.*;
 import java.util.stream.Collectors;
 
-@Controller
+@Slf4j
+@RestController
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class LoginController {
 
-    public final OtpService otpService;
-    public final UserService userService;
-    public final JwtService jwtService;
+    private final UserService userService;
+    private final JwtService jwtService;
 
-    @GetMapping("/login")
-    public String showLoginForm() {
-        return "login"; // Имя шаблона (без расширения .html)
-    }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) throws AccessDeniedException {
 
-    @PostMapping("/login-check")
-    public String processLogin(@RequestParam String username, @RequestParam String passwd, Model model) {
-        System.out.println("ProcessLogin");
-        try {
-            // Попытайтесь аутентифицировать пользователя
-            UserRole role = userService.authenticate(username, passwd);
+        User user = userService.login(request);
 
-            // Генерируем JWT-токен
-            String jwtToken = jwtService.generateToken(username);
+        String accessToken = jwtService.generateAccessToken(user.getLogin());
+        String refreshToken = jwtService.generateRefreshToken(user.getLogin());
 
-            model.addAttribute("username", username);
-            model.addAttribute("role", role.toString());
-            model.addAttribute("jwtToken", jwtToken);
+        Date accessExp = jwtService.getExpiration(accessToken);
+        Date refreshExp = jwtService.getExpiration(refreshToken);
 
-            // Аутентификация прошла успешно, перенаправляем на домашнюю страницу
-            return "userpage";
-        } catch (AuthenticationException e) {
-            List<String> errors = new ArrayList<>();
-            errors.add(e.getMessage());
-            // Аутентификация провалилась, передаем ошибку в шаблон
-            System.out.println("LoginERR!");
-            //redirectAttrs.addFlashAttribute("error", "Invalid credentials or account locked.");
-            model.addAttribute("errors", errors);
-            return "validation-error";
-        }
-    }
+        AuthResponse response = new AuthResponse();
+        response.setAccessToken(accessToken);
+        response.setRefreshToken(refreshToken);
+        response.setUsername(user.getLogin());
+        response.setRole(user.getRole());
+        response.setAccessExpiresAt(accessExp.toInstant());
+        response.setRefreshExpiresAt(refreshExp.toInstant());
 
-    @GetMapping("/register-form")
-    public String showRegistrationForm(Model model) {
-        return "registration";
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
-    public String registerUser(@Valid @ModelAttribute UserDto request, Model model) throws MethodArgumentNotValidException {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
 
-        userService.registerNewUser(request);
-        model.addAttribute("message", "Registration OK!");
-        return "success";
+        log.info("Try to register: {}, {}", request.getName(), request.getRole());
+
+        userService.registerUser(request);
+
+        return ResponseEntity.ok("User:  " + request.getName() + " registration success");
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody RefreshRequest request) {
+        String refreshToken = request.refreshToken();
+
+        String username = jwtService.extractUsername(refreshToken);
+
+        if (!jwtService.isTokenValid(refreshToken, username)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not valid refresh token");
+        }
+
+        String newAccessToken = jwtService.generateAccessToken(username);
+        Instant newAccessExp = jwtService.getExpiration(newAccessToken).toInstant();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("accessToken", newAccessToken);
+        response.put("accessExpiresAt", newAccessExp);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("No token");
+        }
+
+        String token = authHeader.substring(7);
+        jwtService.blacklist(token);
+
+        return ResponseEntity.ok("User exit");
     }
 }

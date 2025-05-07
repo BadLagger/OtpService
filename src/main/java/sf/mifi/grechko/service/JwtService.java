@@ -1,80 +1,95 @@
 package sf.mifi.grechko.service;
 
-import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jose.crypto.MACVerifier;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
-import lombok.RequiredArgsConstructor;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
-
 import java.security.Key;
-import java.text.ParseException;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
-@RequiredArgsConstructor
 public class JwtService {
 
-    private final byte[] secretKeyBytes;
+    private static final long EXPIRATION = 1000 * 60 * 60; // 1 час
+    private static final String SECRET = "mysupersecretkeymysupersecretkey"; // минимум 32 символа
+    private Key key;
 
-    public String generateToken(String username) {
-        Date issuedAt = new Date(System.currentTimeMillis());
-        Date expiredAt = new Date(issuedAt.getTime() + 3600000); // Срок действия токена: 1 час
+    private final Set<String> blacklistedTokens = new HashSet<>();
 
-        // Создаем набор претензий (claims)
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .issuer("lottery")
-                .subject(username)
-                .issueTime(issuedAt)
-                .expirationTime(expiredAt)
-                .build();
-
-        // Создаем заголовок JWT
-        JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256)
-                .type(JOSEObjectType.JWT)
-                .build();
-
-        // Создаем объект SignedJWT
-        SignedJWT signedJWT = new SignedJWT(header, claimsSet);
-
-        // Подписываем токен
-        try {
-            MACSigner macSigner = new MACSigner(secretKeyBytes);
-            signedJWT.sign(macSigner);
-        } catch (JOSEException e) {
-            throw new RuntimeException("Failed to sign JWT", e);
-        }
-
-        // Возвращаем сериализованный токен
-        return signedJWT.serialize();
+    public void blacklist(String token) {
+        blacklistedTokens.add(token);
     }
 
-    public String parseToken(String token) throws ParseException, JOSEException {
-        // Проверяем токен на валидность
-        SignedJWT signedJWT = SignedJWT.parse(token);
+    public boolean isBlacklisted(String token) {
+        return blacklistedTokens.contains(token);
+    }
 
-        // Проверяем подпись токена
-        JWSVerifier verifier = new MACVerifier(secretKeyBytes);
-        if (!signedJWT.verify(verifier)) {
-            throw new JOSEException("Invalid signature");
-        }
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(SECRET.getBytes());
+    }
 
-        // Проверяем претензии (claims)
-        JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+    public String generateAccessToken(String username) {
+        return generateToken(username, EXPIRATION);
+    }
 
-        // Проверяем срок действия токена
-        if (claimsSet.getExpirationTime().before(new Date())) {
-            throw new JOSEException("Expired token");
-        }
+    public String generateRefreshToken(String username) {
+        return generateToken(username, 1000 * 60 * 60 * 24 * 7); // 7 дней
+    }
 
-        // Проверяем субъекта (username)
-        String subject = claimsSet.getSubject();
-        if (subject == null || subject.isEmpty()) {
-            throw new JOSEException("Missing subject claim");
-        }
-        // Токен успешно проверен
-        return subject;
+    private String generateToken(String username, long durationMs) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + durationMs))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String extractUsername(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    public boolean isTokenValid(String token, String expectedUsername) {
+        String username = extractUsername(token);
+        return username.equals(expectedUsername) && !isTokenExpired(token);
+    }
+
+    private boolean isTokenExpired(String token) {
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+        return expiration.before(new Date());
+    }
+
+    public Date getExpiration(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
     }
 
 }

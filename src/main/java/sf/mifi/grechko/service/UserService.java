@@ -1,6 +1,7 @@
 package sf.mifi.grechko.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -8,7 +9,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import sf.mifi.grechko.dto.LoginRequest;
+import sf.mifi.grechko.dto.RegisterRequest;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.entity.User;
@@ -19,48 +23,48 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService{
     private final UserRepository userRepository;
 
-    private final PasswordService passwordService;
+    private final PasswordEncoder passwordEncoder;
 
     private final UserMapper userMapper;
 
-    public void registerNewUser(UserDto userDto) {
-        User user = userMapper.toEntity(userDto);
-
-        // Проверка на наличие админа в БД (по условию, только один админ может быть зареган)
-        if (user.getRole().equals(UserRole.ADMIN) && userRepository.existsByRole(UserRole.ADMIN)) {
-            throw new IllegalArgumentException("User with ADMIN role already exists");
+    public void registerUser(RegisterRequest newUser) {
+        if (userRepository.existsByLogin(newUser.getName())) {
+            log.error("User {} already exists", newUser.getName());
+            throw new IllegalArgumentException("Username already exists");
         }
 
-        // Хэшируем пароль
-        user.setPasswd(passwordService.encodePassword(user.getPasswd()));
+        newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
 
-        // Сохраняем и пытаемся поймать эксепшн, который скорей всего произойдёт в том случае если данные пользователя не уникальны
-        try {
-            userRepository.save(user);
-        } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException(e.getMessage());
+        log.debug("Before mapper: {}, {}, {}", newUser.getName(), newUser.getRole(), newUser.getTelegram());
+        User user = userMapper.toEntity(newUser);
+
+        if (user.getRole() == null) {
+            log.debug("Oops!!! Role is null after mapper");
+            throw new IllegalArgumentException("Mapper get null role");
         }
+
+        userRepository.save(user);
     }
 
 
-    public UserRole authenticate(String username, String password) {
-        User user = userRepository.findByLogin(username);
+    public User login(LoginRequest inUser) {
 
-        if (user == null)
-            throw new UsernameNotFoundException("User not found");
+        var user = userRepository.findByLogin(inUser.name());
 
-        if (!passwordService.matchesPassword(password, user.getPasswd())) {
-            throw new BadCredentialsException("Invalid password");
+        if (user == null) {
+            throw new UsernameNotFoundException(null);
         }
-        return user.getRole();
-    }
 
-    public UserRole getRoleByUsername(String username) {
-        return userRepository.findRoleByLogin(username);
+        if (!passwordEncoder.matches(inUser.password(), user.getPasswd())) {
+            throw new BadCredentialsException(null);
+        }
+
+        return user;
     }
 }
