@@ -35,6 +35,11 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
 
+    @ExceptionHandler(NoEntityFoundException.class)
+    public ResponseEntity<String> handleNoEntityFound(NoEntityFoundException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(ex.getMessage());
+    }
+
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<String> handleJwtException(JwtException ex){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
@@ -52,5 +57,10 @@ public class GlobalException {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<String>  handleValidationErrors(MethodArgumentNotValidException ex) {
         return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
+    @ExceptionHandler(WrongPermissionRights.class)
+    protected ResponseEntity<String> handleWrongPermissions(WrongPermissionRights ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(ex.getMessage());
     }
 }

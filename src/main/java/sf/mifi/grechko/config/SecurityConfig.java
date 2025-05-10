@@ -31,12 +31,11 @@ public class SecurityConfig {
                                 "/auth/**"
                         ).permitAll()
                         //юзеры
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/**")
-                        .hasAuthority("USER")
-
+                        .requestMatchers(HttpMethod.POST, "/api/user/**").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/api/user/**").hasAuthority("USER")
                         //админы
-                        .requestMatchers(HttpMethod.PUT, "/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/admin/**").hasAuthority("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers

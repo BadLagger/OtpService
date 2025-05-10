@@ -11,13 +11,16 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import sf.mifi.grechko.dto.LoginRequest;
 import sf.mifi.grechko.dto.RegisterRequest;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.entity.User;
+import sf.mifi.grechko.exception.NoEntityFoundException;
 import sf.mifi.grechko.exception.UserAlreadyExistException;
 import sf.mifi.grechko.exception.UserExceptionType;
+import sf.mifi.grechko.exception.WrongPermissionRights;
 import sf.mifi.grechko.mapper.UserMapper;
 import sf.mifi.grechko.repository.UserRepository;
 
@@ -101,4 +104,29 @@ public class UserService{
     }
 
 
+    public List<User> getAllUsers(UserRole userRole) {
+        var result = userRepository.findByRole(userRole);
+
+        if (result.isEmpty() || result.get().isEmpty()) {
+            throw new NoEntityFoundException("No users in DB!!!");
+        }
+
+        return result.get();
+    }
+
+    public void deleteUserById(Long userId) {
+        var userRep = userRepository.findById(userId);
+
+        if (userRep.isEmpty()) {
+            throw new NoEntityFoundException("No exist user with id: " + userId);
+        }
+
+        User user = userRep.get();
+
+        if (user.getRole() == UserRole.USER) {
+            userRepository.delete(user);
+        } else {
+            throw new WrongPermissionRights("Attempted to delete user with wrong role");
+        }
+    }
 }

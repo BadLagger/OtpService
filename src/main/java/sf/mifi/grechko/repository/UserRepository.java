@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,9 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByLogin(String login);
 
-    @Query("SELECT u.role FROM User u WHERE u.login = :login")
-    UserRole findRoleByLogin(@Param("login") String login);
-
     boolean existsByLogin(String login);
 
     boolean existsByPhone(@NotNull(message = "Phone Id is mandatory") String phone);
@@ -26,4 +24,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByTelegram(@NotNull(message = "Telegram Id is mandatory") String telegram);
 
     boolean existsByEmail(@NotNull(message = "Email Id is mandatory") String email);
+
+    Optional<List<User>> findByRole(UserRole userRole);
+
+
 }
