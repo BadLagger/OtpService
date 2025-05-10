@@ -1,5 +1,6 @@
 package sf.mifi.grechko.exception;
 
+import io.jsonwebtoken.JwtException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,10 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
 
-
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<String> handleJwtException(JwtException ex){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
     // Обработчик ошибок
    /* @ExceptionHandler(IllegalArgumentException.class)
     protected String handleIllegalArguments(IllegalArgumentException ex, Model model) {
@@ -46,14 +50,7 @@ public class GlobalException {
 
     // Обработчик ошибок
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected String handleValidationErrors(MethodArgumentNotValidException ex, Model model) {
-        BindingResult result = ex.getBindingResult();
-        List<FieldError> fieldErrors = result.getFieldErrors();
-        List<String> errors = fieldErrors.stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.toList());
-
-        model.addAttribute("errors", errors); // Передаем ошибки в модель
-        return "validation-error";
+    protected ResponseEntity<String>  handleValidationErrors(MethodArgumentNotValidException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
     }
 }

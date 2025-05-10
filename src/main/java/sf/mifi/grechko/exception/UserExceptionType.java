@@ -4,7 +4,8 @@ public enum UserExceptionType {
     LOGIN("login"),
     EMAIL("email"),
     PHONE("phone"),
-    TELEGRAM("telegram");
+    TELEGRAM("telegram"),
+    ADMIN("role admin");
 
     private String description;
 

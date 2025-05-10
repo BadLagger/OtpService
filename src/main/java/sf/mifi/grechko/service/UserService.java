@@ -64,9 +64,12 @@ public class UserService{
         User user = userMapper.toEntity(newUser);
 
         log.debug("After mapper: {}", user);
-        if (user.getRole() == null) {
-            log.debug("Oops!!! Role is null after mapper");
-            throw new IllegalArgumentException("Mapper get null role");
+        log.debug("User role: {}", user.getRole());
+        if (user.getRole() == UserRole.ADMIN) {
+            if (userRepository.existsByRole(UserRole.ADMIN)) {
+                log.error("Admin already exists in db");
+                throw new UserAlreadyExistException(UserExceptionType.ADMIN);
+            }
         }
 
         userRepository.save(user);
@@ -97,5 +100,5 @@ public class UserService{
         return user;
     }
 
-    
+
 }

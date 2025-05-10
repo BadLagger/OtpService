@@ -1,5 +1,6 @@
 package sf.mifi.grechko.controller;
 
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,13 +89,19 @@ public class LoginController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body("No token");
+
+        var token = jwtService.extractTokenFromAuthorization(authHeader);
+        var username = jwtService.extractUsername(token);
+
+        if (!jwtService.isTokenValid(token, username)) {
+            throw new SignatureException("Some one try to logout with not valid token for " + username);
         }
 
-        String token = authHeader.substring(7);
+        log.info("User {} logout", username);
+
         jwtService.blacklist(token);
 
+        log.info("User {} exit", username);
         return ResponseEntity.ok("User exit");
     }
 }

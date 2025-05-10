@@ -1,6 +1,7 @@
 package sf.mifi.grechko.service;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -57,6 +58,14 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String extractTokenFromAuthorization(String auth) {
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            throw new MalformedJwtException("Token is not presented or wrong format");
+        }
+
+        return auth.substring(7);
     }
 
     public String extractUsername(String token) {
