@@ -37,7 +37,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         log.debug("Get request with checking");
         String path = request.getServletPath();
 
-        if (path.startsWith("/auth") || path.startsWith("/h2-console")) {
+        if (path.startsWith("/auth")) {
+            log.info("Authorization request");
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,8 +47,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String username;
 
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.error("No or wrong authorization header");
             filterChain.doFilter(request, response);
             return;
         }
@@ -57,6 +58,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String jwt = authHeader.substring(7);
 
         if (jwtService.isBlacklisted(jwt)) {
+            log.error("Token is blocked for {}", jwtService.extractUsername(jwt));
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.getWriter().write("Token is blocked (logout)");
             return;
@@ -67,26 +69,34 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         username = jwtService.extractUsername(jwt);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findByLogin(username);
+            var userRep = userRepository.findByLogin(username);
 
-            log.debug("User Role: {}", user.getRole());
-            UserDetails userDetails = org.springframework.security.core.userdetails.User
-                    .withUsername(user.getLogin())
-                    .password(user.getPasswd())
-                    .authorities(user.getRole().toString())
-                    .build();
+            if (userRep.isPresent()) {
+                User user = userRep.get();
+                log.debug("User Role: {}", user.getRole());
+                UserDetails userDetails = org.springframework.security.core.userdetails.User
+                        .withUsername(user.getLogin())
+                        .password(user.getPasswd())
+                        .authorities(user.getRole().toString())
+                        .build();
 
-            if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities()
-                        );
+                if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails, null, userDetails.getAuthorities()
+                            );
 
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            } else {
+                log.error("User {} not found in DB", username);
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.getWriter().write("User not found");
+                return;
             }
         }
         filterChain.doFilter(request, response);

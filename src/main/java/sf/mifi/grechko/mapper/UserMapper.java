@@ -11,5 +11,7 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     public User toEntity(UserDto userDto);
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "login", source = "name")
+    @Mapping(target = "passwd", source = "password")
     public User toEntity(RegisterRequest userRequest);
 }
