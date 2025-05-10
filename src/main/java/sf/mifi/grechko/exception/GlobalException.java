@@ -68,4 +68,9 @@ public class GlobalException {
     protected ResponseEntity<String> handleWrongPermissions(WrongConfigParameter ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(ex.getMessage());
     }
+
+    @ExceptionHandler(BadOtpType.class)
+    protected ResponseEntity<String> handleBadOtpType(BadOtpType ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(ex.getMessage());
+    }
 }

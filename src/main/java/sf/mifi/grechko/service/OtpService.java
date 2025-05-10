@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import sf.mifi.grechko.dto.OtpType;
 import sf.mifi.grechko.dto.UserDto;
 import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.entity.OtpConfig;
@@ -17,6 +18,8 @@ import sf.mifi.grechko.exception.WrongConfigParameter;
 import sf.mifi.grechko.mapper.UserMapper;
 import sf.mifi.grechko.repository.OtpConfigRepository;
 import sf.mifi.grechko.repository.UserRepository;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -90,5 +93,13 @@ public class OtpService {
 
     public void setConfig(OtpConfig config) {
         setOtpConfig(config.getLifetime(), config.getSignNumber());
+    }
+
+    public void createOtp(String name, OtpType otpType) {
+
+    }
+
+    public void checkOtp(String name, List<Integer> numbers) {
+
     }
 }
