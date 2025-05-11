@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import sf.mifi.grechko.dto.OtpStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -26,6 +27,9 @@ public class OtpCode {
 
     @Column(nullable = false)
     private List<Integer> code;
+
+    @Column(nullable = false)
+    private LocalDateTime requestTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
