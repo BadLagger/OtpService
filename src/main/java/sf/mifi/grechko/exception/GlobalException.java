@@ -73,4 +73,10 @@ public class GlobalException {
     protected ResponseEntity<String> handleBadOtpType(BadOtpType ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(ex.getMessage());
     }
+
+
+    @ExceptionHandler(NoOtpCodesFound.class)
+    protected ResponseEntity<String> handleNoOtpCodesFound(NoOtpCodesFound ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(ex.getMessage());
+    }
 }

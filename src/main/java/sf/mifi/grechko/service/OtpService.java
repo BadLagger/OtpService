@@ -16,6 +16,7 @@ import sf.mifi.grechko.dto.UserRole;
 import sf.mifi.grechko.entity.OtpCode;
 import sf.mifi.grechko.entity.OtpConfig;
 import sf.mifi.grechko.entity.User;
+import sf.mifi.grechko.exception.NoOtpCodesFound;
 import sf.mifi.grechko.exception.WrongConfigParameter;
 import sf.mifi.grechko.mapper.UserMapper;
 import sf.mifi.grechko.repository.OtpCodeRepository;
@@ -37,6 +38,8 @@ public class OtpService {
     private final UserRepository userRepository;
     private final OtpCodeRepository otpCodeRepository;
     private final OtpConfigRepository otpConfigRepository;
+
+    private final SendMessageService sendMessageService;
 
     @Value("${default.otp.config.lifetime}")
     private Long otpConfigLifetimeDefault;
@@ -110,6 +113,19 @@ public class OtpService {
         otpCodeRepository.save(code);
         sсheduledOtpCodeExpired.remove(code.getId());
         log.info("OTP setting to the Expired DONE!!!!");
+    }
+
+    private void setToUsed(OtpCode code) {
+        log.info("Try to set OTP to Used");
+        var future = sсheduledOtpCodeExpired.remove(code.getId());
+        if (future != null) {
+            log.info("Cancel work for this OTP");
+            future.cancel(false);
+        }
+        log.info("Try to update status of OTP in DB");
+        code.setStatus(OtpStatus.USED);
+        otpCodeRepository.save(code);
+        log.info("OTP to USED DONE!!!");
     }
 
     private void checkActiveCodes(OtpConfig config) {
@@ -188,11 +204,35 @@ public class OtpService {
         OtpConfig config = getConfig();
         OtpCode code = generateOptCode(user.get(), config);
         setToActive(code, config);
-        // todo send Message To the messanger
 
+        sendMessageService.send(otpType, code);
     }
 
     public void checkOtp(String name, List<Integer> numbers) {
-        // todo
+        var user = userRepository.findByLogin(name);
+
+        log.info("Get code {} from user {}", numbers, name);
+        if (user.isEmpty()) {
+            log.error("User with name {} not found", name);
+            throw new UsernameNotFoundException("Not found user with name: " + name);
+        }
+
+        // Ищем только активные коды для конкретного пользователя
+        var otpCode = otpCodeRepository.findByUserIdAndStatus(user.get().getId(), OtpStatus.ACTIVE);
+
+        if (otpCode.isEmpty() || otpCode.get().isEmpty()) {
+            log.error("No active codes for user {}", name);
+            throw new NoOtpCodesFound("No otp codes for this user");
+        }
+
+        var otpCodes = otpCode.get();
+        for (var code : otpCodes) {
+            if (code.getCode().equals(numbers)) {
+                setToUsed(code);
+                return;
+            }
+        }
+
+        throw new NoOtpCodesFound("Wrong OTP code!!!");
     }
 }
