@@ -1,7 +1,5 @@
 package sf.mifi.grechko.dto;
 
-import jakarta.persistence.Convert;
-import jakarta.persistence.Converter;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import sf.mifi.grechko.converter.RoleConverter;
 
 @AllArgsConstructor
 @NoArgsConstructor
